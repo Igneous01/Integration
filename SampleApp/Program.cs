@@ -58,9 +58,7 @@ namespace SampleApp
                                 new Applicant() { FirstName = "Jemma", LastName = "Busher" },
                                 new Applicant() { FirstName = "Harrison", LastName = "Bushmaster" }
                             })
-                });
-
-                
+                });   
             }
 
 
@@ -82,13 +80,8 @@ namespace SampleApp
 
             CustomLoan mappedBackObject = xmlMapper.MapToObject(xml);
 
-            //if (mappedBackObject.Equals(loans[0]))
-            //{
-            //    Console.WriteLine("HALELUAH");
-            //}
-
-            Console.WriteLine("Serialization");
-            Console.WriteLine(ToXML(loans[0]));
+            //Console.WriteLine("Serialization");
+            //Console.WriteLine(ToXML(loans[0]));
 
             Console.ReadKey();
             return;

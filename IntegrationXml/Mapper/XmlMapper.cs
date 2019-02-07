@@ -103,23 +103,33 @@ namespace Integration.Xml.Mapper
                     {
                         XmlListAttribute xmlList = xmlPropertyAttributeContext.XmlListAttribute;
                         XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/{xmlList.NodeName}");
-                        object childInstance = CollectionXmlNodeListToObject(results, propertyType);
-                        property.SetValue(instance, childInstance);
+                        if (results.Count > 0)
+                        {
+                            object childInstance = CollectionXmlNodeListToObject(results, propertyType);
+                            property.SetValue(instance, childInstance);
+                        }                    
                         continue;
                     }
                     else if (xmlPropertyAttributeContext.HasXmlDictionaryAttribute)
                     {
                         XmlDictionaryAttribute xmlList = xmlPropertyAttributeContext.XmlDictionaryAttribute;
                         XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/*");
-                        object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
-                        property.SetValue(instance, childInstance);
+                        if (results.Count > 0)
+                        {
+                            object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
+                            property.SetValue(instance, childInstance);
+                        }
                         continue;
                     }
                     else if (xmlPropertyAttributeContext.HasXmlFlattenHierarchyAttribute)
                     {
                         object childInstance = Activator.CreateInstance(propertyType);
-                        childInstance = ToObject(childInstance, xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}"), propertyName);
-                        property.SetValue(instance, childInstance);
+                        XmlNode results = xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}");
+                        if (results != null)
+                        {
+                            childInstance = ToObject(childInstance, results, propertyName);
+                            property.SetValue(instance, childInstance);
+                        }
                         continue;
                     }
                     else if (xmlPropertyAttributeContext.HasXmlPropertyConverterAttribute && propertyValue != null)
@@ -140,24 +150,34 @@ namespace Integration.Xml.Mapper
                     if (propertyType.IsDictionary())
                     {
                         XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/*");
-                        object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
-                        property.SetValue(instance, childInstance);
+                        if (results.Count > 0)
+                        {
+                            object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
+                            property.SetValue(instance, childInstance);
+                        }                   
                         continue;
                     }
                     else if (propertyType.IsCollection())
                     {
                         string listItemNodeName = propertyType.GenericTypeArguments[0].Name;
                         XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/{listItemNodeName}");
-                        object childInstance = CollectionXmlNodeListToObject(results, propertyType);
-                        property.SetValue(instance, childInstance);
+                        if (results.Count > 0)
+                        {
+                            object childInstance = CollectionXmlNodeListToObject(results, propertyType);
+                            property.SetValue(instance, childInstance);
+                        }                 
                         continue;
                     }            
                     if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
                     {
                         // TODO: Dont think this will work
                         object childInstance = Activator.CreateInstance(propertyType);
-                        childInstance = ToObject(childInstance, xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}"), propertyName);
-                        property.SetValue(instance, childInstance);
+                        XmlNode results = xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}");
+                        if (results != null)
+                        {
+                            childInstance = ToObject(childInstance, results, propertyName);
+                            property.SetValue(instance, childInstance);
+                        }           
                         continue;
                     }
                 }
