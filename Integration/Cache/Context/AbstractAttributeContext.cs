@@ -17,7 +17,7 @@ namespace Integration.Cache.Context
             _attributes = new ConcurrentBag<IAttributeMarker>();
         }
 
-        public AbstractAttributeContext(PropertyInfo propertyInfo) : this()
+        public AbstractAttributeContext(IFieldPropertyInfo propertyInfo) : this()
         {
             AddAttributes(ReflectionUtils.GetCustomAttributes<IAttributeMarker>(propertyInfo));
         }

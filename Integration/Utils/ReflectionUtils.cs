@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Integration.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -37,9 +38,31 @@ namespace Integration.Utils
             return GetCustomAttributes<Attribute>(property);
         }
 
+        public static Attribute[] GetCustomAttributes(FieldInfo field)
+        {
+            return GetCustomAttributes<Attribute>(field);
+        }
+
+        public static Attribute[] GetCustomAttributes(IFieldPropertyInfo fieldPropertyInfo)
+        {
+            return GetCustomAttributes<Attribute>(fieldPropertyInfo);
+        }
+
         public static AttributeType[] GetCustomAttributes<AttributeType>(PropertyInfo property)
         {
             object[] attributes = property.GetCustomAttributes(typeof(AttributeType), true);
+            return (AttributeType[])Convert.ChangeType(attributes, typeof(AttributeType[]));
+        }
+
+        public static AttributeType[] GetCustomAttributes<AttributeType>(FieldInfo field)
+        {
+            object[] attributes = field.GetCustomAttributes(typeof(AttributeType), true);
+            return (AttributeType[])Convert.ChangeType(attributes, typeof(AttributeType[]));
+        }
+
+        public static AttributeType[] GetCustomAttributes<AttributeType>(IFieldPropertyInfo fieldPropertyInfo)
+        {
+            object[] attributes = fieldPropertyInfo.GetCustomAttributes(typeof(AttributeType), true);
             return (AttributeType[])Convert.ChangeType(attributes, typeof(AttributeType[]));
         }
 
@@ -48,10 +71,22 @@ namespace Integration.Utils
             return GetCustomAttributes<Attribute>(properties);
         }
 
+        public static Attribute[] GetCustomAttributes(FieldInfo[] fields)
+        {
+            return GetCustomAttributes<Attribute>(fields);
+        }
+
         public static AttributeType[] GetCustomAttributes<AttributeType>(PropertyInfo[] properties)
         {
             IEnumerable<AttributeType> results = properties
                                             .SelectMany((PropertyInfo property) => GetCustomAttributes<AttributeType>(property));
+            return results.ToArray();
+        }
+
+        public static AttributeType[] GetCustomAttributes<AttributeType>(FieldInfo[] fields)
+        {
+            IEnumerable<AttributeType> results = fields
+                                            .SelectMany((FieldInfo field) => GetCustomAttributes<AttributeType>(field));
             return results.ToArray();
         }
 
@@ -70,6 +105,16 @@ namespace Integration.Utils
         public static object[] GetCustomAttributes(Type type, PropertyInfo property)
         {
             return property.GetCustomAttributes(type, true);
+        }
+
+        public static object[] GetCustomAttributes(Type type, FieldInfo field)
+        {
+            return field.GetCustomAttributes(type, true);
+        }
+
+        public static object[] GetCustomAttributes(Type type, IFieldPropertyInfo fieldPropertyInfo)
+        {
+            return fieldPropertyInfo.GetCustomAttributes(type, true);
         }
 
         public static AttributeType[] GetCustomAttributesForAllProperties<T, AttributeType>()
@@ -108,6 +153,16 @@ namespace Integration.Utils
             return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(T);
         }
 
+        public static bool HasCustomAttributeType<AttributeType>(IFieldPropertyInfo fieldPropertyInfo)
+        {
+            return GetCustomAttributes<AttributeType>(fieldPropertyInfo).Length > 0;
+        }
+
+        public static bool HasCustomAttributeType<AttributeType>(FieldInfo field)
+        {
+            return GetCustomAttributes<AttributeType>(field).Length > 0;
+        }
+
         public static bool HasCustomAttributeType<AttributeType>(PropertyInfo property)
         {
             return GetCustomAttributes<AttributeType>(property).Length > 0;
@@ -116,6 +171,16 @@ namespace Integration.Utils
         public static bool HasCustomAttributeType(Type type, PropertyInfo property)
         {
             return GetCustomAttributes(type, property).Length > 0;
+        }
+
+        public static bool HasCustomAttributeType(Type type, FieldInfo field)
+        {
+            return GetCustomAttributes(type, field).Length > 0;
+        }
+
+        public static bool HasCustomAttributeType(Type type, IFieldPropertyInfo fieldPropertyInfo)
+        {
+            return GetCustomAttributes(type, fieldPropertyInfo).Length > 0;
         }
 
         public static bool HasCustomAttributeType<AttributeType>(Type type)

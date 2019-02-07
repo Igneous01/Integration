@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace Integration.Xml.Attributes.Property
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class XmlFlattenHierarchyAttribute : Attribute, IXmlAttributeMarker
     {
     }

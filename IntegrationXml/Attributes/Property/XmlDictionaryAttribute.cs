@@ -4,7 +4,7 @@ using System;
 
 namespace Integration.Xml.Attributes.Property
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class XmlDictionaryAttribute : Attribute, IXmlAttributeMarker
     {
         public XmlMappingOperation MappingOperation { get; set; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Integration.Interfaces;
+using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -22,7 +23,7 @@ namespace Integration.Xml.Exceptions
         {
         }
 
-        public static InvalidXmlMappingException Create(Type parentType, PropertyInfo property, string reason)
+        public static InvalidXmlMappingException Create(Type parentType, IFieldPropertyInfo property, string reason)
         {
             string message = $"{parentType.FullName}.{property.Name} cannot be mapped - {reason}";
             return new InvalidXmlMappingException(message);

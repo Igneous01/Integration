@@ -1,7 +1,10 @@
-﻿using System;
+﻿using Integration.Common;
+using Integration.Interfaces;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +36,15 @@ namespace Integration.Utils
         public static bool HasDefaultConstructor(this Type source)
         {
             return source.GetConstructor(Type.EmptyTypes) != null;
+        }
+
+        public static IFieldPropertyInfo[] GetFieldsAndProperties(this Type source, BindingFlags bindingFlags)
+        {
+            var fields = source.GetFields(bindingFlags)
+                    .Select(property => FieldPropertyInfoFactory.Instance.Create(property))
+                    .Union(source.GetProperties(bindingFlags)
+                            .Select(property => FieldPropertyInfoFactory.Instance.Create(property)));
+            return fields.ToArray();
         }
     }
 }

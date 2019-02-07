@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Integration.Interfaces;
+using System;
 using System.Reflection;
 using System.Runtime.Serialization;
 
@@ -22,7 +23,7 @@ namespace Integration.Xml.Exceptions
         {
         }
 
-        public static InvalidXmlAttributeException Create(Type type, PropertyInfo property, Type attribute, string customMessage)
+        public static InvalidXmlAttributeException Create(Type type, IFieldPropertyInfo property, Type attribute, string customMessage)
         {
             string message = $"{type.FullName}.{property.Name} has an invalid attribute {attribute.FullName} " +
                 $"applied based on its type. Reason: {customMessage} Assembly: {type.AssemblyQualifiedName}";

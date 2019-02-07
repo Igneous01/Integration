@@ -1,5 +1,6 @@
 ﻿using Integration.Cache;
 using Integration.Cache.Context;
+using Integration.Interfaces;
 using Integration.Utils;
 using Integration.Xml.Attributes.Property;
 using Integration.Xml.Attributes.Type;
@@ -52,7 +53,7 @@ namespace Integration.Xml.Mapper
 
         private object ToObject(object instance, XmlNode xmlNode, string nodeName = null)
         {
-            System.Type type = instance.GetType();
+            Type type = instance.GetType();
             ClassMetaData classMetaData = MetaDataCache.Get(type);
             XmlMappingOperation xmlMappingOperation = xmlMapperAttribute.MappingOperation;
            
@@ -67,10 +68,10 @@ namespace Integration.Xml.Mapper
                 }
             }
 
-            foreach (PropertyInfo property in classMetaData.Properties)
+            foreach (IFieldPropertyInfo property in classMetaData.Properties)
             {
                 string propertyName = property.Name;
-                System.Type propertyType = property.PropertyType;
+                System.Type propertyType = property.Type;
 
                 if (classMetaData.HasPropertyAttributeContext<PropertyAttributeContext>(property))
                 {
@@ -82,18 +83,7 @@ namespace Integration.Xml.Mapper
                     propertyName = propertyAttributeContext.HasNameAttribute ? propertyAttributeContext.NameAttribute.Name : propertyName;
                 }
 
-                object propertyValue;
-
-                if (xmlMappingOperation.Equals(XmlMappingOperation.NODE))
-                {
-                    XmlNode propertyNode = xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}");
-                    propertyValue = propertyNode?.InnerText;
-                }
-                else // ATTRIBUTE
-                {
-                    XmlNode propertyNode = xmlNode.SelectSingleNode($"//{nodeName}");
-                    propertyValue = propertyNode.Attributes[propertyName]?.Value;
-                }
+                object propertyValue = GetNodeValue(xmlMappingOperation, xmlNode, nodeName, propertyName);
 
                 if (classMetaData.HasPropertyAttributeContext<XmlPropertyAttributeContext>(property))
                 {
@@ -124,12 +114,8 @@ namespace Integration.Xml.Mapper
                     else if (xmlPropertyAttributeContext.HasXmlFlattenHierarchyAttribute)
                     {
                         object childInstance = Activator.CreateInstance(propertyType);
-                        XmlNode results = xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}");
-                        if (results != null)
-                        {
-                            childInstance = ToObject(childInstance, results, propertyName);
-                            property.SetValue(instance, childInstance);
-                        }
+                        childInstance = ToObject(childInstance, xmlNode, nodeName);
+                        property.SetValue(instance, childInstance);
                         continue;
                     }
                     else if (xmlPropertyAttributeContext.HasXmlPropertyConverterAttribute && propertyValue != null)
@@ -181,11 +167,28 @@ namespace Integration.Xml.Mapper
                         continue;
                     }
                 }
+
+                if (propertyValue == null)
+                    continue;
                
                 property.SetValue(instance, UniversalTypeConverter.Convert(propertyValue, propertyType));
             }
 
             return instance;
+        }
+
+        private object GetNodeValue(XmlMappingOperation xmlMappingOperation, XmlNode xmlNode, string nodeName, string propertyName)
+        {
+            if (xmlMappingOperation.Equals(XmlMappingOperation.NODE))
+            {
+                XmlNode propertyNode = xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}");
+                return propertyNode?.InnerText;
+            }
+            else // ATTRIBUTE
+            {
+                XmlNode propertyNode = xmlNode.SelectSingleNode($"//{nodeName}");
+                return propertyNode?.Attributes[propertyName]?.Value;
+            }
         }
 
         private object CollectionXmlNodeListToObject(XmlNodeList nodeList, Type collectionType)
@@ -273,11 +276,11 @@ namespace Integration.Xml.Mapper
 
             //element.Name = nodeName;
 
-            foreach (PropertyInfo property in classMetaData.Properties)
+            foreach (IFieldPropertyInfo property in classMetaData.Properties)
             {
                 string propertyName = property.Name;
                 object propertyValue = property.GetValue(instance);
-                System.Type propertyType = property.PropertyType;        
+                Type propertyType = property.Type;        
 
                 if (propertyValue == null && ignoreNulls)
                     continue;

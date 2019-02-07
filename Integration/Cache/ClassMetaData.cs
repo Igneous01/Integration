@@ -11,19 +11,19 @@ namespace Integration.Cache
 {
     public class ClassMetaData
     {
-        private ConcurrentDictionary<PropertyInfo, ConcurrentDictionaryTypeContext> _propertyContexts;
+        private ConcurrentDictionary<IFieldPropertyInfo, ConcurrentDictionaryTypeContext> _propertyContexts;
         private ClassAttributeContext _classAttributeContext;
         private Type _classType;
-        private PropertyInfo[] _properties;
+        private IFieldPropertyInfo[] _properties;
 
         public ClassMetaData(Type type)
         {
             _classType = type;
             _classAttributeContext = new ClassAttributeContext(type);
-            _properties = type.GetProperties(ReflectionUtils.GetPublicBindingFlags());
-            _propertyContexts = new ConcurrentDictionary<PropertyInfo, ConcurrentDictionaryTypeContext>();
+            _properties = type.GetFieldsAndProperties(ReflectionUtils.GetPublicBindingFlags());
+            _propertyContexts = new ConcurrentDictionary<IFieldPropertyInfo, ConcurrentDictionaryTypeContext>();
             
-            foreach (PropertyInfo property in _properties)
+            foreach (IFieldPropertyInfo property in _properties)
             {
                 ConcurrentDictionaryTypeContext propertyDictionary = new ConcurrentDictionaryTypeContext();
 
@@ -49,21 +49,21 @@ namespace Integration.Cache
 
         public Type Type { get { return _classType; } }
 
-        public PropertyInfo[] Properties { get { return _properties; } }
+        public IFieldPropertyInfo[] Properties { get { return _properties; } }
 
         public ClassAttributeContext ClassAttributeContext { get { return _classAttributeContext; } }
 
-        public AttributeContextType GetAttributeContextForProperty<AttributeContextType>(PropertyInfo property) where AttributeContextType : AbstractAttributeContext
+        public AttributeContextType GetAttributeContextForProperty<AttributeContextType>(IFieldPropertyInfo property) where AttributeContextType : AbstractAttributeContext
         {
             return (AttributeContextType)_propertyContexts[property][typeof(AttributeContextType)];
         }
 
-        public bool HasPropertyAttributeContext<AttributeContextType>(PropertyInfo property)
+        public bool HasPropertyAttributeContext<AttributeContextType>(IFieldPropertyInfo property)
         {
             return _propertyContexts.ContainsKey(property) && _propertyContexts[property].ContainsKey(typeof(AttributeContextType));
         }
 
-        public ConcurrentDictionaryTypeContext GetContextsForProperty(PropertyInfo property)
+        public ConcurrentDictionaryTypeContext GetContextsForProperty(IFieldPropertyInfo property)
         {
             return _propertyContexts[property];
         }

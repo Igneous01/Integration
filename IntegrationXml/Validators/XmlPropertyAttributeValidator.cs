@@ -22,10 +22,10 @@ namespace IntegrationXml.Validators
         private static readonly string DICTIONARY_REASON_ERROR = $"{typeof(XmlDictionaryAttribute).Name} only applies to properties that implement {typeof(IDictionary).FullName}.";
         private static readonly string DICTIONARY_AUTOMAP_REASON_ERROR = $"Properties that implement IDictionary can only be automatically mapped if key is type {typeof(String).FullName}. To map this type, please add {typeof(XmlDictionaryAttribute).FullName} attribute to property.";
 
-        public void Validate(PropertyInfo property, Type parentType, AbstractAttributeContext context)
+        public void Validate(IFieldPropertyInfo property, Type parentType, AbstractAttributeContext context)
         {
             XmlPropertyAttributeContext xmlContext = (XmlPropertyAttributeContext)context;
-            Type type = property.PropertyType;
+            Type type = property.Type;
 
             if (xmlContext.HasXmlFlattenHierarchyAttribute && !type.IsClass)
                 throw InvalidXmlAttributeException.Create(parentType, property, typeof(XmlFlattenHierarchyAttribute), FLATTEN_HIERARCHY_REASON_ERROR);

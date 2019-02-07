@@ -55,10 +55,10 @@ namespace SampleApp.domain
     public class Applicant
     {
         [Name("name")]
-        public string FirstName { get; set; }
+        public string FirstName;
 
         [Name("surname")]
-        public string LastName { get; set; }
+        public string LastName;
     }
 
     [XmlMapper(ParentNodeName = "ApplicationNode", 
@@ -72,7 +72,7 @@ namespace SampleApp.domain
         [Name("date")]
         public DateTime CreateDate { get; set; }
 
-        public string Name { get; set; }
+        public string Name;
 
         public object AnotherNull { get; set; }
     }
@@ -108,13 +108,16 @@ namespace SampleApp.domain
     }
 
     [XmlMapper(ParentNodeName = "CustomLoan", 
-        MappingOperation = XmlMappingOperation.ATTRIBUTE, 
+        MappingOperation = XmlMappingOperation.NODE, 
         IgnoreNulls = true,
         Formatting = System.Xml.Linq.SaveOptions.None)]
     public class CustomLoan : Loan
     {
         public string CustomFieldA { get; set; }
         public string CustomFieldB { get; set; }
+
+        [XmlFlattenHierarchy]
+        public UnMarked FlattenThisProperty;
 
         public Dictionary<string, UnMarked> Dictionary { get; set; }
         public LinkedList<Applicant> JointApplicants { get; set; }

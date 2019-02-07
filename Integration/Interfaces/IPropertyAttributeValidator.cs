@@ -10,6 +10,6 @@ namespace Integration.Interfaces
 {
     public interface IPropertyAttributeValidator
     {
-        void Validate(PropertyInfo property, Type parentType, AbstractAttributeContext context);
+        void Validate(IFieldPropertyInfo property, Type parentType, AbstractAttributeContext context);
     }
 }

@@ -48,7 +48,12 @@
     <Compile Include="Cache\MetaDataEntry.cs" />
     <Compile Include="Cache\MetaDataRegistry.cs" />
     <Compile Include="CommonStarter.cs" />
+    <Compile Include="Common\FieldInfoImpl.cs" />
+    <Compile Include="Common\FieldPropertyInfoFactory.cs" />
+    <Compile Include="Common\PropertyInfoImpl.cs" />
+    <Compile Include="Enums\PropertyFieldType.cs" />
     <Compile Include="Initializer.cs" />
+    <Compile Include="Interfaces\IFieldPropertyInfo.cs" />
     <Compile Include="Interfaces\IPropertyAttributeValidator.cs" />
     <Compile Include="Interfaces\ICommonAttributeMarker.cs" />
     <Compile Include="Attributes\Property\IgnoreAttribute.cs" />

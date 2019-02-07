@@ -1,4 +1,5 @@
 ﻿using Integration.Attributes.Property;
+using Integration.Interfaces;
 using Integration.Utils;
 using System.Collections;
 using System.Reflection;
@@ -7,7 +8,7 @@ namespace Integration.Cache.Context
 {
     public class PropertyAttributeContext : AbstractAttributeContext
     {
-        public PropertyAttributeContext(PropertyInfo property)
+        public PropertyAttributeContext(IFieldPropertyInfo property)
             : base(property)
         {
             Property = property;
@@ -19,7 +20,7 @@ namespace Integration.Cache.Context
             HasIgnoreAttribute = ContainsAttribute<IgnoreAttribute>();        
         }
 
-        public PropertyInfo Property { get; private set; }
+        public IFieldPropertyInfo Property { get; private set; }
         public PropertyConverterAttribute PropertyConverterAttribute { get; private set; }
         public NameAttribute NameAttribute { get; private set; }
 

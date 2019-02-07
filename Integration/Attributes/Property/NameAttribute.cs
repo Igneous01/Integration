@@ -3,7 +3,7 @@ using System;
 
 namespace Integration.Attributes.Property
 {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
     public class NameAttribute : Attribute, ICommonAttributeMarker
     {
         public readonly string _name;

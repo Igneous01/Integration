@@ -1,21 +1,11 @@
-﻿using Integration.Cache;
-using Integration.Cache.Context;
-using Integration.Xml.Attributes.Property;
-using Integration.Xml.Context;
-using Integration.Xml.Enums;
+﻿using Integration.Xml.Enums;
 using Integration.Xml.Interfaces;
-using Integration.Xml.Utils;
 using System;
-using System.Collections;
-using System.Reflection;
-using System.Xml;
 using System.Xml.Linq;
-using System.Xml.XPath;
-using TB.ComponentModel;
 
 namespace Integration.Xml.Attributes.Type
 {
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Struct)]
     public class XmlMapperAttribute : Attribute, IXmlAttributeMarker
     {
         public string ParentNodeName { get; set; }

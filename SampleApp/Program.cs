@@ -57,7 +57,8 @@ namespace SampleApp
                             {
                                 new Applicant() { FirstName = "Jemma", LastName = "Busher" },
                                 new Applicant() { FirstName = "Harrison", LastName = "Bushmaster" }
-                            })
+                            }),
+                        FlattenThisProperty = new UnMarked() {  UnmarkedFieldA = 777, UnmarkedFieldB = 312 }
                 });   
             }
 
