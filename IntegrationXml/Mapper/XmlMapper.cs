@@ -1,5 +1,6 @@
 ﻿using Integration.Cache;
 using Integration.Cache.Context;
+using Integration.Utils;
 using Integration.Xml.Attributes.Property;
 using Integration.Xml.Attributes.Type;
 using Integration.Xml.Context;
@@ -9,10 +10,7 @@ using Integration.Xml.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using TB.ComponentModel;
@@ -56,7 +54,7 @@ namespace Integration.Xml.Mapper
         {
             System.Type type = instance.GetType();
             ClassMetaData classMetaData = MetaDataCache.Get(type);
-            XmlMappingOperation xmlMappingOperation = XmlMappingOperation.NODE;
+            XmlMappingOperation xmlMappingOperation = xmlMapperAttribute.MappingOperation;
            
             if (classMetaData.ClassAttributeContext.ContainsAttribute<XmlMapperAttribute>())
             {
@@ -105,7 +103,15 @@ namespace Integration.Xml.Mapper
                     {
                         XmlListAttribute xmlList = xmlPropertyAttributeContext.XmlListAttribute;
                         XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/{xmlList.NodeName}");
-                        object childInstance = EnumerableXmlNodeListToObject(results, propertyType);
+                        object childInstance = CollectionXmlNodeListToObject(results, propertyType);
+                        property.SetValue(instance, childInstance);
+                        continue;
+                    }
+                    else if (xmlPropertyAttributeContext.HasXmlDictionaryAttribute)
+                    {
+                        XmlDictionaryAttribute xmlList = xmlPropertyAttributeContext.XmlDictionaryAttribute;
+                        XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/*");
+                        object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
                         property.SetValue(instance, childInstance);
                         continue;
                     }
@@ -126,9 +132,27 @@ namespace Integration.Xml.Mapper
                         catch (Exception ex)
                         {
                             throw new XmlPropertyConverterException("XmlPropertyConverter threw an exception", ex);
-                        }          
+                        }
                     }
-                    else if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
+                }
+                else
+                {
+                    if (propertyType.IsDictionary())
+                    {
+                        XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/*");
+                        object childInstance = DictionaryXmlNodeListToObject(results, propertyType);
+                        property.SetValue(instance, childInstance);
+                        continue;
+                    }
+                    else if (propertyType.IsCollection())
+                    {
+                        string listItemNodeName = propertyType.GenericTypeArguments[0].Name;
+                        XmlNodeList results = xmlNode.SelectNodes($"//{nodeName}/{propertyName}/{listItemNodeName}");
+                        object childInstance = CollectionXmlNodeListToObject(results, propertyType);
+                        property.SetValue(instance, childInstance);
+                        continue;
+                    }            
+                    if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
                     {
                         // TODO: Dont think this will work
                         object childInstance = Activator.CreateInstance(propertyType);
@@ -137,20 +161,62 @@ namespace Integration.Xml.Mapper
                         continue;
                     }
                 }
-                // TODO: Remove duplicated code
-                else if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
-                {
-                    // TODO: Dont think this will work
-                    object childInstance = Activator.CreateInstance(propertyType);
-                    childInstance = ToObject(childInstance, xmlNode.SelectSingleNode($"//{nodeName}/{propertyName}"), propertyName);
-                    property.SetValue(instance, childInstance);
-                    continue;
-                }
-
+               
                 property.SetValue(instance, UniversalTypeConverter.Convert(propertyValue, propertyType));
             }
 
             return instance;
+        }
+
+        private object CollectionXmlNodeListToObject(XmlNodeList nodeList, Type collectionType)
+        {
+            object collection = CreateInstanceOfType(collectionType);     
+            Type containedType = collectionType.GetTypeInfo().GenericTypeArguments[0];
+            Type iCollectionType = typeof(ICollection<>).MakeGenericType(containedType);
+
+            foreach (XmlNode node in nodeList)
+            {
+                object value = CreateInstanceOfType(containedType);
+
+                if (containedType.IsClass && MetaDataCache.Contains(containedType))
+                    value = ToObject(value, node, node.Name);
+                else
+                    value = node.InnerText;
+
+                iCollectionType.GetMethod("Add").Invoke(collection, new[] { value });
+            }
+
+            return collection;
+        }
+
+        private object DictionaryXmlNodeListToObject(XmlNodeList nodeList, System.Type dictionaryType)
+        {
+            object dictionary = Activator.CreateInstance(dictionaryType);
+            Type keyType = dictionaryType.GetTypeInfo().GenericTypeArguments[0];
+            Type valueType = dictionaryType.GetTypeInfo().GenericTypeArguments[1];
+
+            foreach (XmlNode node in nodeList)
+            {
+                object key = node.Name; // will be replaced with dictionary mapper later
+                object value = CreateInstanceOfType(valueType);
+
+                if (valueType.IsClass && MetaDataCache.Contains(valueType))
+                    value = ToObject(value, node, node.Name);
+                else
+                    value = node.InnerText;
+
+                dictionaryType.GetMethod("Add").Invoke(dictionary, new[] { node.Name, value });
+            }
+
+            return dictionary;
+        }
+
+        private object CreateInstanceOfType(Type type)
+        {
+            if (!type.HasDefaultConstructor())
+                return null;
+            else
+                return Activator.CreateInstance(type);
         }
 
         private XDocument ToXmlWrapper(Type type, T instance)
@@ -185,13 +251,13 @@ namespace Integration.Xml.Mapper
                 }
             }
 
-            element.Name = nodeName;
+            //element.Name = nodeName;
 
             foreach (PropertyInfo property in classMetaData.Properties)
             {
                 string propertyName = property.Name;
-                System.Type propertyType = property.PropertyType;
                 object propertyValue = property.GetValue(instance);
+                System.Type propertyType = property.PropertyType;        
 
                 if (propertyValue == null && ignoreNulls)
                     continue;
@@ -215,23 +281,44 @@ namespace Integration.Xml.Mapper
                         try
                         {
                             propertyValue = converter.ConvertToDestinationType(propertyValue);
+                            AddToXElement(element, xmlMappingOperation, propertyName, propertyValue);
+                            continue;
                         }
                         catch (Exception ex)
                         {
                             throw new XmlPropertyConverterException("XmlPropertyConverter threw an exception", ex);
                         }
                     }
+                    else if (xmlPropertyAttributeContext.HasXmlDictionaryAttribute)
+                    {
+                        XmlDictionaryAttribute xmlDictionary = xmlPropertyAttributeContext.XmlDictionaryAttribute;
+                        element.Add(DictionaryToXElement(propertyValue, propertyName));
+                        continue;
+                    }
                     else if (xmlPropertyAttributeContext.HasXmlListAttribute)
                     {
                         XmlListAttribute xmlList = xmlPropertyAttributeContext.XmlListAttribute;
-                        element.Add(EnumerableToXElement(propertyValue, propertyName, xmlList.NodeName));
+                        element.Add(CollectionToXElement(propertyValue, propertyName, xmlList.NodeName));
                         continue;
-                    }
+                    }                   
                     else if (xmlPropertyAttributeContext.HasXmlFlattenHierarchyAttribute)
                     {
                         element = ToXml(propertyValue, propertyType, element, propertyName);
                         continue;
                     }
+                }
+                else
+                {
+                    if (propertyType.IsDictionary())
+                    {
+                        element.Add(DictionaryToXElement(propertyValue, propertyName));
+                        continue;
+                    }
+                    else if (propertyType.IsCollection())
+                    {
+                        element.Add(CollectionToXElement(propertyValue, propertyName, propertyType.GenericTypeArguments[0].Name));
+                        continue;
+                    }              
                     else if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
                     {
                         XElement propertyElement = new XElement(propertyName);
@@ -240,52 +327,59 @@ namespace Integration.Xml.Mapper
                         continue;
                     }
                 }
-                // TODO: Remove duplicated code
-                else if (propertyType.IsClass && MetaDataCache.Contains(propertyType))
-                {
-                    XElement propertyElement = new XElement(propertyName);
-                    propertyElement = ToXml(propertyValue, propertyType, propertyElement, propertyName);
-                    element.Add(propertyElement);
-                    continue;
-                }
 
-                if (xmlMappingOperation.Equals(XmlMappingOperation.ATTRIBUTE))
-                    element.SetAttributeValue(propertyName, propertyValue);
-                else if (xmlMappingOperation.Equals(XmlMappingOperation.NODE))
-                    element.Add(new XElement(propertyName, propertyValue));
+                AddToXElement(element, xmlMappingOperation, propertyName, propertyValue);
             }
 
             return element;
         }
 
-        // TODO, needs to support nested complex objects inside here
-        private XElement EnumerableToXElement(object enumerable, string parentNodeName, string childNodeName)
+        private void AddToXElement(XElement element, XmlMappingOperation xmlMappingOperation, string propertyName, object propertyValue)
+        {
+            if (xmlMappingOperation.Equals(XmlMappingOperation.ATTRIBUTE))
+                element.SetAttributeValue(propertyName, propertyValue);
+            else if (xmlMappingOperation.Equals(XmlMappingOperation.NODE))
+                element.Add(new XElement(propertyName, propertyValue));
+        }
+
+        private XElement CollectionToXElement(object collection, string parentNodeName, string childNodeName)
         {
             XElement propertyElement = new XElement(parentNodeName);
+            Type containedType = collection.GetType().GenericTypeArguments[0];
 
-            foreach (var item in (IEnumerable)enumerable)
+            foreach (var item in (ICollection)collection)
             {
-                XElement itemElement = new XElement(childNodeName, item);
+                XElement itemElement = new XElement(childNodeName);
+                if (containedType.IsClass && MetaDataCache.Contains(containedType))
+                    itemElement = ToXml(item, item.GetType(), itemElement, childNodeName);
+                else
+                    itemElement.SetValue(item);
+                
                 propertyElement.Add(itemElement);
             }
 
             return propertyElement;
         }
 
-        private object EnumerableXmlNodeListToObject(XmlNodeList nodeList, System.Type enumerableType)
+        private XElement DictionaryToXElement(object dictionary, string parentNodeName)
         {
-            object enumerable = Activator.CreateInstance(enumerableType);
-            System.Type containedType = enumerableType.GetTypeInfo().GenericTypeArguments[0];
+            XElement propertyElement = new XElement(parentNodeName);
+            Type keyType = dictionary.GetType().GenericTypeArguments[0];
+            Type valueType = dictionary.GetType().GenericTypeArguments[1];
 
-            foreach (XmlNode node in nodeList)
+            foreach (DictionaryEntry kvp in (IDictionary)dictionary)
             {
-                // TODO: not compatible with strings or other immutable types
-                //object containedInstance = Activator.CreateInstance(containedType);
-                //containedInstance = node.Value;
-                enumerableType.GetMethod("Add").Invoke(enumerable, new[] { node.InnerText });
+                // TODO - this will call converter that converts Dictionary key to XElement
+                XElement itemElement = new XElement(kvp.Key.ToString());
+                if (valueType.IsClass && MetaDataCache.Contains(valueType))
+                    itemElement = ToXml(kvp.Value, kvp.Value.GetType(), itemElement, itemElement.Name.LocalName);
+                else
+                    itemElement.SetValue(kvp.Value);
+
+                propertyElement.Add(itemElement);
             }
 
-            return enumerable;
-        }
+            return propertyElement;
+        }  
     }
 }

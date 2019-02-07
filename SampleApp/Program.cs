@@ -47,13 +47,20 @@ namespace SampleApp
                         Listing = new List<string>() { "string", "another", "text" },
                         CustomFieldA = "Custom Data For Client Here",
                         CustomFieldB = "Custom Other Data For Client Here",
-                        //Dictionary = new Dictionary<string, UnMarked>()
-                        //{
-                        //    { "KeyA", new UnMarked(){ UnmarkedFieldA = 20, UnmarkedFieldB = 3.14564 } },
-                        //    { "KeyB", new UnMarked(){ UnmarkedFieldA = 77, UnmarkedFieldB = 16.981357 } },
-                        //    { "KeyC", new UnMarked(){ UnmarkedFieldA = 86486, UnmarkedFieldB = -1.1384 } }
-                        //}
-                    });
+                        Dictionary = new Dictionary<string, UnMarked>()
+                            {
+                                { "KeyA", new UnMarked(){ UnmarkedFieldA = 20, UnmarkedFieldB = 3.14564 } },
+                                { "KeyB", new UnMarked(){ UnmarkedFieldA = 77, UnmarkedFieldB = 16.981357 } },
+                                { "KeyC", new UnMarked(){ UnmarkedFieldA = 86486, UnmarkedFieldB = -1.1384 } }
+                            },
+                        JointApplicants = new LinkedList<Applicant>(new List<Applicant>
+                            {
+                                new Applicant() { FirstName = "Jemma", LastName = "Busher" },
+                                new Applicant() { FirstName = "Harrison", LastName = "Bushmaster" }
+                            })
+                });
+
+                
             }
 
 

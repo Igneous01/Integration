@@ -14,9 +14,15 @@ namespace Integration.Utils
             return source.IsValueType && !source.IsPrimitive && !source.IsEnum;
         }
 
-        public static bool IsEnumerable(this Type source)
+        public static bool IsCollection(this Type source)
         {
-            return typeof(IEnumerable).IsAssignableFrom(source);
+            return source.GetInterfaces()
+                            .Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(ICollection<>));
+        }
+
+        public static bool IsString(this Type source)
+        {
+            return typeof(string).IsAssignableFrom(source);
         }
 
         public static bool IsDictionary(this Type source)
@@ -24,6 +30,9 @@ namespace Integration.Utils
             return typeof(IDictionary).IsAssignableFrom(source);
         }
 
-        
+        public static bool HasDefaultConstructor(this Type source)
+        {
+            return source.GetConstructor(Type.EmptyTypes) != null;
+        }
     }
 }

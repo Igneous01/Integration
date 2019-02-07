@@ -116,7 +116,8 @@ namespace SampleApp.domain
         public string CustomFieldA { get; set; }
         public string CustomFieldB { get; set; }
 
-        //public Dictionary<string, UnMarked> Dictionary { get; set; }
+        public Dictionary<string, UnMarked> Dictionary { get; set; }
+        public LinkedList<Applicant> JointApplicants { get; set; }
     }
 
 }
